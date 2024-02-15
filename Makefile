@@ -1,8 +1,8 @@
-run: cpython
-	./cpython $(INPUT) $(OUTPUT)
+run: korova
+	./korova $(INPUT) $(OUTPUT)
 
-cpython: parser.cpp lexer.cpp utils.cpp
-	g++ parser.cpp lexer.cpp utils.cpp -lm -o cpython
+korova: parser.cpp lexer.cpp
+	g++ -std=c++20 parser.cpp lexer.cpp grammar.cpp -lm -o korova
 
 parser.hpp parser.cpp: parser.y
 	bison -d -t -v -o parser.cpp parser.y

@@ -1,136 +1,117 @@
 %{
+#include "lexer_generator.cpp"
+#include "parser_generator.cpp"
+#include "grammar.h"
+
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-#include "utils.h"
-#include "lexer.h"
+using namespace std;
 
 std::fstream fout;
 
 extern int yylex(void);
 void yyerror (const char *s);
 
-#define UN_IMPL_OVERLOAD(op, op_type) \
-yyval.exp = new expr_t(std::string(op) + " " + yyvsp[0].exp->data, std::max(yyvsp[0].exp->type, op_type)); \
-delete yyvsp[0].exp;
+using production = std::vector<std::string>;
 
-#define UN_IMPL(op, op_type) \
-yyval.exp = new expr_t(std::string(op) + " " + yyvsp[0].exp->data, op_type); \
-delete yyvsp[0].exp;
+string code1, code2;
+vector<rule> rules;
+unordered_map<string, string> lexer_rules;
+unordered_map<string, string> types;
+unordered_map<string, string> nonterm_args;
+unordered_set<string> tokens;
+string start_name;
 
-#define BIN_IMPL_OVERLOAD(op, op_type) \
-yyval.exp = new expr_t(yyvsp[-2].exp->data + " " + op + " " + yyvsp[0].exp->data, std::max(std::max(yyvsp[0].exp->type, yyvsp[-2].exp->type), op_type)); \
-delete yyvsp[0].exp; delete yyvsp[-2].exp;
-
-#define BIN_IMPL(op, op_type) \
-yyval.exp = new expr_t(yyvsp[-2].exp->data + " " + op + " " + yyvsp[0].exp->data, op_type); \
-delete yyvsp[0].exp; delete yyvsp[-2].exp;
 %}
 
 %code requires {
-    #include "utils.h"
+    #include "grammar.h"
 }
 
 %union {
-    expr_t*  exp;
-    var_t*   var;
-    block_t* blk;
+    string* str;
+    pair<vector<string>, vector<string>>* rules_vec;
 }
 
-%type <exp> expr
-%type <blk> state block
-
-%token COLON COMMA RPAREN LPAREN ASSIGN RETURN DEF CONTINUE BREAK WHILE RANGE IN FOR ELSE ELIF IF
-%token <var> VAR
-%token <exp> INT DOUBLE STRING
-
-%left OR
-%left AND
-%left NOT
-%precedence LT GT LET GET EQ NEQ
-%left SUB ADD
-%left MUL FDIV MOD DIV
-%left NEG POS
+%type <rules_vec> rule_
+%token <str> NAME LEXER_CODE PARSER_CODE REGEXP
+%token PERC_SEP COLON PIPE TOKEN TYPE ARROW_LPAREN ARROW_RPAREN START LPAREN RPAREN
 
 %start start
 
 %%
 
 start :
-    block {
-        fout << "#include <stdio.h>\n\n" << print_vars_definition($1->vars) + "\n";
-
-        std::string data = nest_block($1->data, 1);
-
-        fout << "int main(void) {\n" << data << "\treturn 0;\n}\n\n";
-
-        delete $1;
+    LEXER_CODE types PERC_SEP lexer PERC_SEP grammar PERC_SEP LEXER_CODE {
+        code1 = *$1;
+        code2 = *$8;
+        delete $1; delete $8;
     }
 
-block :
-    IF expr COLON block {
-        $$ = new block_t({},
-            "if (" + $2->data + ") {\n" + nest_block($4->data, $4->nesting) + "}\n",
-             0);
-        delete $2; delete $4;
-    }
-    | ELIF expr COLON block {}
-    | ELSE COLON block {}
-    | WHILE expr COLON block {}
-    | FOR VAR IN RANGE LPAREN expr RPAREN COLON block {}
-    | block state {
-        auto vec = $1->vars;
-        vec.insert(vec.end(), $2->vars.begin(), $2->vars.end());
-        $$ = new block_t(vec, $1->data + $2->data, 0);
-        delete $1; delete $2;
-    }
-    | state { $$ = $1; }
+types :
+    %empty {}
+    | type types {}
 
-state :
-    expr {
-        $$ = new block_t({}, $1->data + ";\n" , 0);
-        delete $1;
+type :
+    TOKEN ARROW_LPAREN NAME ARROW_RPAREN NAME {
+        types[*$5] = *$3;
+        tokens.insert(*$5);
+        delete $3; delete $5;
     }
-    | VAR ASSIGN expr {
-        var_t v($1->name, $3->type);
-        $$ = new block_t(std::vector{v}, $1->name + " = " + $3->data + ";\n" , 0);
-        delete $1; delete $3;
-    }
-
-expr :
-    INT                     { $$ = $1; }
-    | DOUBLE                { $$ = $1; }
-    | STRING                { $$ = $1; }
-    | VAR                   {
-        $$ = new expr_t($1->name, $1->type);
-        delete $1;
-    }
-    | expr OR expr          { BIN_IMPL("||", 0) }
-    | expr AND expr         { BIN_IMPL("&&", 0) }
-    | NOT expr              { UN_IMPL("!", 0) }
-    | expr LT expr          { BIN_IMPL("<", 0) }
-    | expr GT expr          { BIN_IMPL(">", 0) }
-    | expr LET expr         { BIN_IMPL("<=", 0) }
-    | expr GET expr         { BIN_IMPL(">=", 0) }
-    | expr EQ expr          { BIN_IMPL("==", 0) }
-    | expr NEQ expr         { BIN_IMPL("!=", 0) }
-    | expr SUB expr         { BIN_IMPL_OVERLOAD("-", 0) }
-    | expr ADD expr         { BIN_IMPL_OVERLOAD("+", 0) }
-    | expr MUL expr         { BIN_IMPL_OVERLOAD("*", 0) }
-    | expr FDIV expr        { BIN_IMPL_OVERLOAD("/", 1) }
-    | expr MOD expr         { BIN_IMPL_OVERLOAD("%", 0) }
-    | expr DIV expr         { BIN_IMPL_OVERLOAD("/", 0) }
-    | SUB expr %prec NEG    { UN_IMPL_OVERLOAD("-", 0) }
-    | ADD expr %prec POS    { UN_IMPL_OVERLOAD("+", 0) }
-    | LPAREN expr RPAREN    {
-        $$ = new expr_t("(" + $2->data + ")", $2->type);
+    | TOKEN NAME {
+        tokens.insert(*$2);
         delete $2;
+    }
+    | TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME {
+        types[*$5] = *$3;
+        nonterm_args[*$5] = "";
+        delete $3; delete $5;
+    }
+    | TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME LPAREN NAME RPAREN {
+        types[*$5] = *$3;
+        nonterm_args[*$5] = *$7;
+        delete $3; delete $5; delete $7;
+    }
+    | START NAME {
+        start_name = *$2;
+        delete $2;
+    }
+
+lexer :
+    %empty {}
+    | lexer REGEXP LEXER_CODE {
+        lexer_rules[*$2] = *$3;
+        delete $2; delete $3;
+    }
+
+grammar :
+    %empty {}
+    | grammar NAME COLON rule_ PARSER_CODE {
+        rules.push_back({*$2, {(*$4).first, *$5, (*$4).second}});
+        delete $2; delete $4; delete $5;
+    }
+
+rule_ :
+    %empty { $$ = new vector<string>(); }
+    | rule_ NAME {
+        $1->first.push_back(*$2);
+        $1->first.push_back("");
+        $$ = $1;
+        delete $2;
+    }
+    | rule_ NAME LPAREN NAME RPAREN {
+        $1->push_back(*$2);
+        $1->push_back(*$4);
+        $$ = $1;
+        delete $2; delete $4;
     }
 %%
 
-void yyerror(const char *s){
-    fprintf(stderr, "%s\n", s);
-}
+void yyerror(const char *s) {}
 
 int main(int argc, char* argv[]) {
     int err = 0;
@@ -143,16 +124,23 @@ int main(int argc, char* argv[]) {
 
     if (argc > 1 && (in_f = freopen(argv[1], "r", stdin)) == NULL) {
         fprintf(stderr, "Can't open input file.\n");
-        err = 1;
-        goto close;
+        return 1;
     }
 
     fout.open(argv[2], std::fstream::out);
 
-    if (err = yyparse())
-        goto close;
+    if (err = yyparse()) {
+        fclose(in_f);
+        return err;
+    }
 
-close:
+    auto g = grammar(start_name, tokens, rules, types, lexer_rules);
+
+    string lexer_src = lexer_generator(g)();
+    string parser_src = parser_generator(g)();
+
+    fout << code1 << lexer_src << parser_src << code2;
+
     fclose(in_f);
     return err;
 }

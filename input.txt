@@ -1,0 +1,152 @@
+%{
+
+#include <string>
+#include <list>
+#include <utility>
+#include <regex>
+#include <cassert>
+#include <iostream>
+#include <fstream>
+
+std::string PARSER_INPUT;
+
+class tree {
+    std::string node;
+    std::list<tree> children;
+
+public:
+    tree() = default;
+    tree(std::string node_);
+    std::string get_node() const;
+    std::list<tree> get_children() const;
+    void add_child(tree t);
+};
+
+tree::tree(std::string node_) : node(std::move(node_)) {}
+
+std::string tree::get_node() const {
+    return node;
+}
+
+std::list<tree> tree::get_children() const {
+    return children;
+}
+
+void tree::add_child(tree t) {
+    children.push_back(std::move(t));
+}
+
+using t_ptr = tree*;
+
+%}
+
+%start S
+%type <t_ptr> S
+%type <t_ptr> P
+%type <t_ptr> A
+%type <t_ptr> V
+%token <t_ptr> LPAREN
+%token <t_ptr> RPAREN
+%token <t_ptr> STAR
+%token <t_ptr> SEMICOLON
+%token <t_ptr> COMMA
+%token <t_ptr> NUMBER
+%token <t_ptr> NAME
+
+%%
+
+\"["\ %{ cur_value.tree = tree("["); return LPAREN; %}
+
+\"]"\ %{ cur_value.tree = tree("]"); return RPAREN; %}
+
+\"*"\ %{ cur_value.tree = tree("*"); return STAR; %}
+
+\";"\ %{ cur_value.tree = tree(";"); return SEMICOLON; %}
+
+\","\ %{ cur_value.tree = tree(","); return COMMA; %}
+
+\[0-9]+\ %{ cur_value.tree = tree(cur_match); return NUMBER; %}
+
+\[a-zA-Z_][a-zA-Z0-9_]*\ %{ cur_value.tree = tree(cur_match); return NAME; %}
+
+%%
+
+S : NAME P NAME A V SEMICOLON #{
+    $0 = new tree("S");
+    $0->add_child(*$1);
+    $0->add_child(*$2);
+    $0->add_child(*$3);
+    $0->add_child(*$4);
+    $0->add_child(*$5);
+    $0->add_child(*$6);
+    delete $1; delete $2; delete $3; delete $4; delete $5; delete $6;
+#}
+P : STAR P #{
+    $0 = new tree("P");
+    $0->add_child(*$1);
+    $0->add_child(*$2);
+    delete $1; delete $2;
+#}
+P : EPS #{
+    $0 = new tree("P");
+    $0->add_child(tree("eps"));
+#}
+A : LPAREN NUMBER RPAREN A #{
+    $0 = new tree("A");
+    $0->add_child(*$1);
+    $0->add_child(*$2);
+    $0->add_child(*$3);
+    $0->add_child(*$4);
+    delete $1; delete $2; delete $3; delete $4;
+#}
+A : EPS #{
+    $0 = new tree("A");
+    $0->add_child(tree("eps"));
+#}
+V : COMMA P NAME A V #{
+    $0 = new tree("V");
+    $0->add_child(*$1);
+    $0->add_child(*$2);
+    $0->add_child(*$3);
+    $0->add_child(*$4);
+    $0->add_child(*$5);
+    delete $1; delete $2; delete $3; delete $4; delete $5;
+#}
+V : EPS #{
+    $0 = new tree("V"); $0->add_child(tree("eps"));
+#}
+
+%%
+
+%{
+
+static std::string get_vertex(int n, const std::string& name) {
+    return std::to_string(n) + "[label=\"" + name + "\"]\n";
+}
+
+static std::string get_edge(int v, int u) {
+    return std::to_string(v) + " -> " + std::to_string(u) + "\n";
+}
+
+static void dfs(const tree& v, std::ofstream& fout, int& cnt) {
+    int v_n = cnt;
+    if (v_n == 0)
+        fout << get_vertex(v_n, v.get_node());
+    for (const tree& u: v.get_children()) {
+        int u_n = ++cnt;
+        fout << get_vertex(u_n, u.get_node());
+        fout << get_edge(v_n, u_n);
+        dfs(u, fout, cnt);
+    }
+}
+
+int main(int argc, char* argv[]) {
+    std::cin >> PARSER_INPUT;
+    int cnt = 0;
+    std::ofstream fout("3.txt");
+    fout << "digraph G {\n";
+    dfs(*parse(), fout, cnt);
+    fout << "}";
+}
+
+%}

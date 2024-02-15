@@ -1,0 +1,6 @@
+# ninja log v5
+1	843	1706198980049052334	CMakeFiles/MT_Lab4.dir/grammar.cpp.o	d79617e02cd8af7d
+2	608	1706198979817051307	CMakeFiles/MT_Lab4.dir/parser_generator.cpp.o	7e6bc0ee18875bf5
+2	1064	1706198980273053325	CMakeFiles/MT_Lab4.dir/parser.cpp.o	19958ef88df750ff
+1065	1173	1706198980381053803	MT_Lab4	f09a88d16089ebf
+2	596	1706198979805051254	CMakeFiles/MT_Lab4.dir/lexer.cpp.o	f6d06bd609a4492a

@@ -1,0 +1,387 @@
+Terminals unused in grammar
+
+    PIPE
+
+
+Grammar
+
+    0 $accept: start $end
+
+    1 start: LEXER_CODE types PERC_SEP lexer PERC_SEP grammar PERC_SEP LEXER_CODE
+
+    2 types: ε
+    3      | type types
+
+    4 type: TOKEN ARROW_LPAREN NAME ARROW_RPAREN NAME
+    5     | TOKEN NAME
+    6     | TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME
+    7     | TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME LPAREN NAME RPAREN
+    8     | START NAME
+
+    9 lexer: ε
+   10      | lexer REGEXP LEXER_CODE
+
+   11 grammar: ε
+   12        | grammar NAME COLON rule_ PARSER_CODE
+
+   13 rule_: ε
+   14      | rule_ NAME
+   15      | rule_ NAME LPAREN NAME RPAREN
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    error (256)
+    NAME <str> (258) 4 5 6 7 8 12 14 15
+    LEXER_CODE <str> (259) 1 10
+    PARSER_CODE <str> (260) 12
+    REGEXP <str> (261) 10
+    PERC_SEP (262) 1
+    COLON (263) 12
+    PIPE (264)
+    TOKEN (265) 4 5
+    TYPE (266) 6 7
+    ARROW_LPAREN (267) 4 6 7
+    ARROW_RPAREN (268) 4 6 7
+    START (269) 8
+    LPAREN (270) 7 15
+    RPAREN (271) 7 15
+
+
+Nonterminals, with rules where they appear
+
+    $accept (17)
+        on left: 0
+    start (18)
+        on left: 1
+        on right: 0
+    types (19)
+        on left: 2 3
+        on right: 1 3
+    type (20)
+        on left: 4 5 6 7 8
+        on right: 3
+    lexer (21)
+        on left: 9 10
+        on right: 1 10
+    grammar (22)
+        on left: 11 12
+        on right: 1 12
+    rule_ <rules_vec> (23)
+        on left: 13 14 15
+        on right: 12 14 15
+
+
+State 0
+
+    0 $accept: • start $end
+
+    LEXER_CODE  shift, and go to state 1
+
+    start  go to state 2
+
+
+State 1
+
+    1 start: LEXER_CODE • types PERC_SEP lexer PERC_SEP grammar PERC_SEP LEXER_CODE
+
+    TOKEN  shift, and go to state 3
+    TYPE   shift, and go to state 4
+    START  shift, and go to state 5
+
+    $default  reduce using rule 2 (types)
+
+    types  go to state 6
+    type   go to state 7
+
+
+State 2
+
+    0 $accept: start • $end
+
+    $end  shift, and go to state 8
+
+
+State 3
+
+    4 type: TOKEN • ARROW_LPAREN NAME ARROW_RPAREN NAME
+    5     | TOKEN • NAME
+
+    NAME          shift, and go to state 9
+    ARROW_LPAREN  shift, and go to state 10
+
+
+State 4
+
+    6 type: TYPE • ARROW_LPAREN NAME ARROW_RPAREN NAME
+    7     | TYPE • ARROW_LPAREN NAME ARROW_RPAREN NAME LPAREN NAME RPAREN
+
+    ARROW_LPAREN  shift, and go to state 11
+
+
+State 5
+
+    8 type: START • NAME
+
+    NAME  shift, and go to state 12
+
+
+State 6
+
+    1 start: LEXER_CODE types • PERC_SEP lexer PERC_SEP grammar PERC_SEP LEXER_CODE
+
+    PERC_SEP  shift, and go to state 13
+
+
+State 7
+
+    3 types: type • types
+
+    TOKEN  shift, and go to state 3
+    TYPE   shift, and go to state 4
+    START  shift, and go to state 5
+
+    $default  reduce using rule 2 (types)
+
+    types  go to state 14
+    type   go to state 7
+
+
+State 8
+
+    0 $accept: start $end •
+
+    $default  accept
+
+
+State 9
+
+    5 type: TOKEN NAME •
+
+    $default  reduce using rule 5 (type)
+
+
+State 10
+
+    4 type: TOKEN ARROW_LPAREN • NAME ARROW_RPAREN NAME
+
+    NAME  shift, and go to state 15
+
+
+State 11
+
+    6 type: TYPE ARROW_LPAREN • NAME ARROW_RPAREN NAME
+    7     | TYPE ARROW_LPAREN • NAME ARROW_RPAREN NAME LPAREN NAME RPAREN
+
+    NAME  shift, and go to state 16
+
+
+State 12
+
+    8 type: START NAME •
+
+    $default  reduce using rule 8 (type)
+
+
+State 13
+
+    1 start: LEXER_CODE types PERC_SEP • lexer PERC_SEP grammar PERC_SEP LEXER_CODE
+
+    $default  reduce using rule 9 (lexer)
+
+    lexer  go to state 17
+
+
+State 14
+
+    3 types: type types •
+
+    $default  reduce using rule 3 (types)
+
+
+State 15
+
+    4 type: TOKEN ARROW_LPAREN NAME • ARROW_RPAREN NAME
+
+    ARROW_RPAREN  shift, and go to state 18
+
+
+State 16
+
+    6 type: TYPE ARROW_LPAREN NAME • ARROW_RPAREN NAME
+    7     | TYPE ARROW_LPAREN NAME • ARROW_RPAREN NAME LPAREN NAME RPAREN
+
+    ARROW_RPAREN  shift, and go to state 19
+
+
+State 17
+
+    1 start: LEXER_CODE types PERC_SEP lexer • PERC_SEP grammar PERC_SEP LEXER_CODE
+   10 lexer: lexer • REGEXP LEXER_CODE
+
+    REGEXP    shift, and go to state 20
+    PERC_SEP  shift, and go to state 21
+
+
+State 18
+
+    4 type: TOKEN ARROW_LPAREN NAME ARROW_RPAREN • NAME
+
+    NAME  shift, and go to state 22
+
+
+State 19
+
+    6 type: TYPE ARROW_LPAREN NAME ARROW_RPAREN • NAME
+    7     | TYPE ARROW_LPAREN NAME ARROW_RPAREN • NAME LPAREN NAME RPAREN
+
+    NAME  shift, and go to state 23
+
+
+State 20
+
+   10 lexer: lexer REGEXP • LEXER_CODE
+
+    LEXER_CODE  shift, and go to state 24
+
+
+State 21
+
+    1 start: LEXER_CODE types PERC_SEP lexer PERC_SEP • grammar PERC_SEP LEXER_CODE
+
+    $default  reduce using rule 11 (grammar)
+
+    grammar  go to state 25
+
+
+State 22
+
+    4 type: TOKEN ARROW_LPAREN NAME ARROW_RPAREN NAME •
+
+    $default  reduce using rule 4 (type)
+
+
+State 23
+
+    6 type: TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME •
+    7     | TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME • LPAREN NAME RPAREN
+
+    LPAREN  shift, and go to state 26
+
+    $default  reduce using rule 6 (type)
+
+
+State 24
+
+   10 lexer: lexer REGEXP LEXER_CODE •
+
+    $default  reduce using rule 10 (lexer)
+
+
+State 25
+
+    1 start: LEXER_CODE types PERC_SEP lexer PERC_SEP grammar • PERC_SEP LEXER_CODE
+   12 grammar: grammar • NAME COLON rule_ PARSER_CODE
+
+    NAME      shift, and go to state 27
+    PERC_SEP  shift, and go to state 28
+
+
+State 26
+
+    7 type: TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME LPAREN • NAME RPAREN
+
+    NAME  shift, and go to state 29
+
+
+State 27
+
+   12 grammar: grammar NAME • COLON rule_ PARSER_CODE
+
+    COLON  shift, and go to state 30
+
+
+State 28
+
+    1 start: LEXER_CODE types PERC_SEP lexer PERC_SEP grammar PERC_SEP • LEXER_CODE
+
+    LEXER_CODE  shift, and go to state 31
+
+
+State 29
+
+    7 type: TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME LPAREN NAME • RPAREN
+
+    RPAREN  shift, and go to state 32
+
+
+State 30
+
+   12 grammar: grammar NAME COLON • rule_ PARSER_CODE
+
+    $default  reduce using rule 13 (rule_)
+
+    rule_  go to state 33
+
+
+State 31
+
+    1 start: LEXER_CODE types PERC_SEP lexer PERC_SEP grammar PERC_SEP LEXER_CODE •
+
+    $default  reduce using rule 1 (start)
+
+
+State 32
+
+    7 type: TYPE ARROW_LPAREN NAME ARROW_RPAREN NAME LPAREN NAME RPAREN •
+
+    $default  reduce using rule 7 (type)
+
+
+State 33
+
+   12 grammar: grammar NAME COLON rule_ • PARSER_CODE
+   14 rule_: rule_ • NAME
+   15      | rule_ • NAME LPAREN NAME RPAREN
+
+    NAME         shift, and go to state 34
+    PARSER_CODE  shift, and go to state 35
+
+
+State 34
+
+   14 rule_: rule_ NAME •
+   15      | rule_ NAME • LPAREN NAME RPAREN
+
+    LPAREN  shift, and go to state 36
+
+    $default  reduce using rule 14 (rule_)
+
+
+State 35
+
+   12 grammar: grammar NAME COLON rule_ PARSER_CODE •
+
+    $default  reduce using rule 12 (grammar)
+
+
+State 36
+
+   15 rule_: rule_ NAME LPAREN • NAME RPAREN
+
+    NAME  shift, and go to state 37
+
+
+State 37
+
+   15 rule_: rule_ NAME LPAREN NAME • RPAREN
+
+    RPAREN  shift, and go to state 38
+
+
+State 38
+
+   15 rule_: rule_ NAME LPAREN NAME RPAREN •
+
+    $default  reduce using rule 15 (rule_)

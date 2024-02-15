@@ -1,0 +1,3 @@
+/home/vladimir/CLionProjects/MT_Lab4/cmake-build-debug/CMakeFiles/MT_Lab4.dir
+/home/vladimir/CLionProjects/MT_Lab4/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/vladimir/CLionProjects/MT_Lab4/cmake-build-debug/CMakeFiles/rebuild_cache.dir
